@@ -107,7 +107,7 @@ tr:nth-child(even) td{background:#fcfdff}
       <div class="row">
         <div>
           <label class="small">URL Web App (Apps Script) /exec</label>
-          <input id="url" placeholder="https://script.google.com/macros/s/.../exec" />
+          <input id="url" value="https://script.google.com/macros/s/AKfycbxKUV0MV5XYZmBhDLImS96OwhR9aIjtZNmfFqaFGLh_n1JScDjmdNNRiUfspw25q59RFg/exec" readonly>
         </div>
         <div>
           <label class="small">Desde</label>
@@ -446,6 +446,12 @@ function clearAll(){
 $("btnLoad").onclick=loadData;
 $("btnRefresh").onclick=loadData;
 $("btnClear").onclick=clearAll;
+
+window.addEventListener("load",()=>{
+ document.getElementById("url").value = 'https://script.google.com/macros/s/AKfycbxKUV0MV5XYZmBhDLImS96OwhR9aIjtZNmfFqaFGLh_n1JScDjmdNNRiUfspw25q59RFg/exec';
+ loadData();
+});
+
 </script>
 </body>
 </html>
