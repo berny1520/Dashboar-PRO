@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Xtreme • Dashboard Partes PRO</title>
+<style>
+:root{
+  --xtreme:#d9232d;--bg:#eef2f7;--card:#ffffff;--ink:#111827;--muted:#6b7280;--line:#dbe3ee;
+  --ok:#16a34a;--warn:#f59e0b;--bad:#ef4444;--blue:#2563eb;--violet:#7c3aed;--teal:#0f766e;
+  --dark:#0f172a;--dark2:#1e293b;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:linear-gradient(180deg,#f8fafc 0%,#eef2f7 100%);color:var(--ink)}
+header{
+  background:linear-gradient(90deg,var(--dark),var(--dark2));
+  color:#fff;border-bottom:4px solid var(--xtreme);padding:14px 16px;
+  display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;
+  box-shadow:0 10px 28px rgba(15,23,42,.18)
+}
+header b{font-size:16px;letter-spacing:.02em}
+header .small{font-size:12px;color:#cbd5e1}
+.wrap{max-width:1380px;margin:14px auto;padding:0 14px 46px}
+.card{
+  background:var(--card);border:1px solid var(--line);border-radius:18px;
+  box-shadow:0 10px 24px rgba(15,23,42,.07);margin:14px 0;overflow:hidden
+}
+.card h3{
+  margin:0;padding:14px 16px;font-size:14px;color:#0f172a;
+  border-bottom:1px solid var(--line);background:linear-gradient(180deg,#fff,#f8fafc)
+}
+.card .body{padding:14px 16px}
+.row{display:grid;grid-template-columns:1fr;gap:10px}
+@media(min-width:980px){.row{grid-template-columns:1.3fr .8fr .8fr .8fr}}
+.row2{display:grid;grid-template-columns:1fr;gap:10px}
+@media(min-width:980px){.row2{grid-template-columns:1fr .7fr .7fr}}
+input,select{
+  width:100%;padding:10px 12px;border:1px solid #cfd8e3;border-radius:12px;font-size:14px;background:#fff;
+  box-shadow:inset 0 1px 1px rgba(0,0,0,.03)
+}
+button{
+  border:0;border-radius:12px;padding:10px 14px;background:#111827;color:#fff;font-weight:800;cursor:pointer
+}
+button.secondary{background:#475569}
+.topActions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tag{
+  display:inline-block;padding:6px 10px;border-radius:999px;background:#111827;color:#fff;font-weight:800;font-size:11px
+}
+.tag.ok{background:var(--ok)} .tag.warn{background:var(--warn);color:#111} .tag.bad{background:var(--bad)}
+.small{font-size:12px;color:var(--muted)}
+.kpis{display:grid;grid-template-columns:repeat(1,minmax(0,1fr));gap:12px}
+@media(min-width:700px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(min-width:1100px){.kpis{grid-template-columns:repeat(6,minmax(0,1fr))}}
+.kpi{
+  border:1px solid var(--line);border-radius:16px;padding:14px;background:linear-gradient(180deg,#fff,#f8fafc);
+  box-shadow:0 8px 18px rgba(15,23,42,.04)
+}
+.kpi .lbl{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.kpi .val{font-size:28px;font-weight:900;margin-top:6px}
+.kpi .sub{font-size:12px;color:var(--muted);margin-top:4px}
+.grid2{display:grid;grid-template-columns:1fr;gap:14px}
+@media(min-width:1100px){.grid2{grid-template-columns:1.1fr .9fr}}
+.chartCard{
+  border:1px solid var(--line);border-radius:16px;padding:12px;background:linear-gradient(180deg,#fff,#f8fafc)
+}
+.chartTitle{font-size:12px;font-weight:900;color:#334155;margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em}
+.bars{display:grid;gap:9px}
+.barRow{display:flex;gap:10px;align-items:center}
+.barLbl{width:58px;font-weight:900;font-size:12px}
+.barTrack{flex:1;height:16px;border-radius:999px;background:#eef2f7;overflow:hidden;border:1px solid #e2e8f0}
+.barFill{height:100%;width:0%;border-radius:999px}
+.barVal{width:52px;text-align:right;font-weight:900;font-size:12px}
+canvas{width:100%;height:280px;display:block;background:#fff;border-radius:12px}
+.tableWrap{overflow:auto;border:1px solid var(--line);border-radius:14px;background:#fff}
+table{border-collapse:collapse;width:100%;min-width:1080px}
+th,td{border:1px solid #e5e7eb;padding:8px 9px;font-size:12px;vertical-align:top}
+th{background:#f8fafc;color:#334155;position:sticky;top:0}
+tr:nth-child(even) td{background:#fcfdff}
+.badge{
+  display:inline-block;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:800
+}
+.badge.ok{background:#dcfce7;color:#166534}
+.badge.bad{background:#fee2e2;color:#991b1b}
+.badge.warn{background:#fef3c7;color:#92400e}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:#475569}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.dot{width:10px;height:10px;border-radius:999px;display:inline-block}
+.footerNote{margin-top:8px;font-size:12px;color:#64748b}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <b>Xtreme • Dashboard Partes PRO</b>
+    <div class="small">Más visual, con KPI, ranking, estado operativo y gráfico de fallas/paradas</div>
+  </div>
+  <div class="topActions">
+    <span id="status" class="tag">Sin cargar</span>
+    <button class="secondary" id="btnRefresh">Actualizar</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="card">
+    <h3>Conexión y filtros</h3>
+    <div class="body">
+      <div class="row">
+        <div>
+          <label class="small">URL Web App (Apps Script) /exec</label>
+          <input id="url" placeholder="https://script.google.com/macros/s/.../exec" />
+        </div>
+        <div>
+          <label class="small">Desde</label>
+          <input id="from" type="date"/>
+        </div>
+        <div>
+          <label class="small">Hasta</label>
+          <input id="to" type="date"/>
+        </div>
+        <div>
+          <label class="small">Turno</label>
+          <select id="turno">
+            <option value="">Todos</option>
+            <option value="A">A</option>
+            <option value="B">B</option>
+          </select>
+        </div>
+      </div>
+      <div class="row2" style="margin-top:10px">
+        <div>
+          <label class="small">Equipo contiene</label>
+          <input id="equipoLike" placeholder="Ej: JUMBO / MAT-474 / LHD" />
+        </div>
+        <div>
+          <label class="small">Límite</label>
+          <input id="limit" type="number" value="200" min="1" max="2000"/>
+        </div>
+        <div style="display:flex;align-items:end;gap:10px">
+          <button id="btnLoad">Cargar registros</button>
+          <button class="secondary" id="btnClear">Limpiar</button>
+        </div>
+      </div>
+      <div class="footerNote">Lee desde Google Sheets vía Apps Script. No modifica datos.</div>
+    </div>
+  </div>
+
+  <div class="kpis" id="kpiCards"></div>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>Distribución KPI (filtro actual)</h3>
+      <div class="body">
+        <div id="bars" class="bars"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Gráfico de fallas / paradas</h3>
+      <div class="body">
+        <div class="chartCard">
+          <div class="chartTitle">Participación de causas tipo ASARCO</div>
+          <canvas id="failChart" width="720" height="320"></canvas>
+          <div class="legend" style="margin-top:10px">
+            <span><i class="dot" style="background:#ef4444"></i> HMF</span>
+            <span><i class="dot" style="background:#f59e0b"></i> FSO</span>
+            <span><i class="dot" style="background:#2563eb"></i> DNP</span>
+            <span><i class="dot" style="background:#7c3aed"></i> DP</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>Top equipos por horas efectivas</h3>
+      <div class="body">
+        <div id="rankEquipos"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Estado operativo</h3>
+      <div class="body">
+        <div id="estadoResumen"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Registros</h3>
+    <div class="body">
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th><th>Turno</th><th>Equipo</th><th>Faena</th><th>Operador</th>
+              <th>Horómetro Motor</th><th>Estado</th><th>Novedades</th><th>KPI (HH)</th>
+            </tr>
+          </thead>
+          <tbody id="tb"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const KPI_ORDER=["HEF","BNF","HR","DP","DNP","HMF","FSO","SOP","ESM"];
+const KPI_COLORS={HEF:"#16a34a",BNF:"#0f766e",HR:"#64748b",DP:"#7c3aed",DNP:"#2563eb",HMF:"#ef4444",FSO:"#f59e0b",SOP:"#475569",ESM:"#0ea5e9"};
+const FAIL_KEYS=["HMF","FSO","DNP","DP"];
+const $=id=>document.getElementById(id);
+const URL_KEY = "XTREME_WEBAPP_URL";
+
+function setStatus(t, kind=""){
+  const el=$("status");
+  el.textContent=t;
+  el.className="tag" + (kind ? " "+kind : "");
+}
+function ymd(d){ const p=n=>String(n).padStart(2,"0"); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; }
+(function initDates(){
+  const d=new Date(); $("to").value=ymd(d);
+  const d2=new Date(d); d2.setDate(d2.getDate()-7); $("from").value=ymd(d2);
+})();
+(function initUrl(){
+  const saved = (localStorage.getItem(URL_KEY)||"").trim();
+  if(saved) $("url").value = saved;
+})();
+
+function escapeHtml(v){
+  return String(v ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+}
+function num(v){ const n=Number(v||0); return isFinite(n)?n:0; }
+
+function sumTotals(records){
+  const totals={}; KPI_ORDER.forEach(k=>totals[k]=0);
+  records.forEach(r=>{
+    const obj = r.kpiSums || r.kpiTotals || {};
+    KPI_ORDER.forEach(k=>{ totals[k]+= num(obj[k]); });
+  });
+  return totals;
+}
+
+function makeBars(totals){
+  const box=$("bars"); box.innerHTML="";
+  const max=Math.max(1,...KPI_ORDER.map(k=>totals[k]||0));
+  KPI_ORDER.forEach(k=>{
+    const v=totals[k]||0;
+    const pct=Math.round((v/max)*100);
+    const row=document.createElement("div");
+    row.className="barRow";
+    row.innerHTML=`<div class="barLbl">${k}</div>
+      <div class="barTrack"><div class="barFill" style="width:${pct}%;background:${KPI_COLORS[k]||"#111827"}"></div></div>
+      <div class="barVal">${v.toFixed(1)}</div>`;
+    box.appendChild(row);
+  });
+}
+
+function makeKpiCards(records, totals){
+  const totalReg = records.length;
+  const hef = num(totals.HEF), hmf=num(totals.HMF), dp=num(totals.DP), dnp=num(totals.DNP), fso=num(totals.FSO);
+  const fallas = hmf + fso + dp + dnp;
+  const disp = (hef + hmf) > 0 ? (hef / (hef + hmf))*100 : 0;
+  const cards = [
+    ["Registros", totalReg, "Partes cargados"],
+    ["HEF", hef.toFixed(1), "Horas efectivas"],
+    ["HMF", hmf.toFixed(1), "Horas mantención/falla"],
+    ["DP+DNP", (dp+dnp).toFixed(1), "Demoras / no productivo"],
+    ["Disponibilidad", disp.toFixed(1)+"%", "Aprox. con HEF y HMF"],
+    ["Pérdidas", fallas.toFixed(1), "Fallas + demoras"]
+  ];
+  $("kpiCards").innerHTML = cards.map(([lbl,val,sub])=>`
+    <div class="kpi">
+      <div class="lbl">${escapeHtml(lbl)}</div>
+      <div class="val">${escapeHtml(val)}</div>
+      <div class="sub">${escapeHtml(sub)}</div>
+    </div>
+  `).join("");
+}
+
+function drawFailChart(totals){
+  const c = $("failChart");
+  const ctx = c.getContext("2d");
+  const w = c.width, h = c.height;
+  ctx.clearRect(0,0,w,h);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0,0,w,h);
+
+  const data = FAIL_KEYS.map(k=>({k, v:num(totals[k]), color:KPI_COLORS[k]}));
+  const total = Math.max(1, data.reduce((a,b)=>a+b.v,0));
+  const cx = 200, cy = 160, r = 95;
+  let start = -Math.PI/2;
+
+  data.forEach(d=>{
+    const angle = (d.v/total) * Math.PI*2;
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,r,start,start+angle);
+    ctx.closePath();
+    ctx.fillStyle = d.color;
+    ctx.fill();
+    start += angle;
+  });
+
+  ctx.beginPath();
+  ctx.arc(cx,cy,52,0,Math.PI*2);
+  ctx.fillStyle="#fff";
+  ctx.fill();
+
+  ctx.fillStyle="#334155";
+  ctx.font="bold 14px Arial";
+  ctx.textAlign="center";
+  ctx.fillText("FALLAS", cx, cy-6);
+  ctx.font="bold 18px Arial";
+  ctx.fillText(total.toFixed(1), cx, cy+18);
+
+  const x0 = 370, y0 = 72;
+  data.forEach((d,i)=>{
+    const y = y0 + i*52;
+    ctx.fillStyle = d.color;
+    ctx.fillRect(x0, y, 18, 18);
+    ctx.fillStyle = "#0f172a";
+    ctx.font = "bold 14px Arial";
+    ctx.textAlign="left";
+    ctx.fillText(d.k, x0+28, y+14);
+    ctx.font = "12px Arial";
+    const pct = total ? ((d.v/total)*100).toFixed(1) : "0.0";
+    ctx.fillText(`${d.v.toFixed(1)} h  (${pct}%)`, x0+90, y+14);
+    ctx.fillStyle="#e2e8f0";
+    ctx.fillRect(x0+28, y+25, 220, 10);
+    ctx.fillStyle=d.color;
+    ctx.fillRect(x0+28, y+25, total ? (220*d.v/total) : 0, 10);
+  });
+}
+
+function groupByEquipo(records){
+  const m = {};
+  records.forEach(r=>{
+    const eq = r.idEquipo ? `${r.idEquipo} (${r.equipoTipo||""})` : (r.equipoTipo||"SIN EQUIPO");
+    if(!m[eq]) m[eq] = {equipo:eq, HEF:0, HMF:0, registros:0};
+    const k = r.kpiSums || r.kpiTotals || {};
+    m[eq].HEF += num(k.HEF);
+    m[eq].HMF += num(k.HMF);
+    m[eq].registros += 1;
+  });
+  return Object.values(m).sort((a,b)=>b.HEF-a.HEF).slice(0,8);
+}
+
+function renderRanking(records){
+  const rows = groupByEquipo(records);
+  if(!rows.length){ $("rankEquipos").innerHTML = '<div class="small">Sin datos.</div>'; return; }
+  const max = Math.max(1, ...rows.map(r=>r.HEF));
+  $("rankEquipos").innerHTML = rows.map(r=>`
+    <div class="barRow" style="margin-bottom:10px">
+      <div class="barLbl" style="width:220px">${escapeHtml(r.equipo)}</div>
+      <div class="barTrack"><div class="barFill" style="width:${Math.round((r.HEF/max)*100)}%;background:linear-gradient(90deg,#16a34a,#0f766e)"></div></div>
+      <div class="barVal">${r.HEF.toFixed(1)}</div>
+    </div>
+  `).join("");
+}
+
+function renderEstado(records){
+  const counts = {OPERATIVO:0, FUERA_SERVICIO:0, VACIO:0, OTRO:0};
+  records.forEach(r=>{
+    const e = String(r.estadoOper||"").trim();
+    if(e==="OPERATIVO") counts.OPERATIVO++;
+    else if(e==="FUERA_SERVICIO") counts.FUERA_SERVICIO++;
+    else if(e==="VACIO" || e==="VACÍO") counts.VACIO++;
+    else counts.OTRO++;
+  });
+  $("estadoResumen").innerHTML = `
+    <div class="kpis" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+      <div class="kpi"><div class="lbl">Operativo</div><div class="val" style="color:#16a34a">${counts.OPERATIVO}</div></div>
+      <div class="kpi"><div class="lbl">Fuera servicio</div><div class="val" style="color:#ef4444">${counts.FUERA_SERVICIO}</div></div>
+      <div class="kpi"><div class="lbl">Vacío</div><div class="val" style="color:#f59e0b">${counts.VACIO}</div></div>
+      <div class="kpi"><div class="lbl">Otro</div><div class="val" style="color:#64748b">${counts.OTRO}</div></div>
+    </div>`;
+}
+
+function estadoBadge(v){
+  const e = String(v||"").trim();
+  if(e==="OPERATIVO") return `<span class="badge ok">OPERATIVO</span>`;
+  if(e==="FUERA_SERVICIO") return `<span class="badge bad">FUERA SERVICIO</span>`;
+  return `<span class="badge warn">${escapeHtml(e||"—")}</span>`;
+}
+
+function rowHtml(r){
+  const hm = `${escapeHtml(r.hMotorIni||"—")} → ${escapeHtml(r.hMotorFin||"—")}`;
+  const kObj = r.kpiSums || r.kpiTotals || {};
+  const kpi = KPI_ORDER.map(k=>`${k}:${num(kObj[k]).toFixed(1)}`).join(" | ");
+  const eq = r.idEquipo ? `${r.idEquipo} (${r.equipoTipo||""})` : (r.equipoTipo||"");
+  return `<tr>
+    <td>${escapeHtml(r.fecha||"")}</td>
+    <td>${escapeHtml(r.turno||"")}</td>
+    <td>${escapeHtml(eq)}</td>
+    <td>${escapeHtml(r.faena||"")}</td>
+    <td>${escapeHtml(r.operador||"")}</td>
+    <td>${hm}</td>
+    <td>${estadoBadge(r.estadoOper||"")}</td>
+    <td>${escapeHtml(r.novedades||"")}</td>
+    <td>${escapeHtml(kpi)}</td>
+  </tr>`;
+}
+
+async function loadData(){
+  const url=$("url").value.trim();
+  if(!url){ alert("Pega la URL /exec del Apps Script."); return; }
+  localStorage.setItem(URL_KEY, url);
+
+  const params=new URLSearchParams({
+    action:"list",
+    from:$("from").value,
+    to:$("to").value,
+    turno:$("turno").value,
+    equipoLike:$("equipoLike").value,
+    limit:$("limit").value || "200"
+  });
+
+  setStatus("Cargando…","warn");
+  const res = await fetch(url + "?" + params.toString(), {method:"GET"});
+  const out = await res.json();
+  const records = out.records || [];
+  const totals = sumTotals(records);
+
+  $("tb").innerHTML = records.map(rowHtml).join("");
+  makeBars(totals);
+  makeKpiCards(records, totals);
+  drawFailChart(totals);
+  renderRanking(records);
+  renderEstado(records);
+
+  setStatus("OK ("+records.length+")","ok");
+}
+
+function clearAll(){
+  $("tb").innerHTML="";
+  $("bars").innerHTML="";
+  $("kpiCards").innerHTML="";
+  $("rankEquipos").innerHTML="";
+  $("estadoResumen").innerHTML="";
+  const c=$("failChart"), ctx=c.getContext("2d");
+  ctx.clearRect(0,0,c.width,c.height);
+  setStatus("Limpio","warn");
+}
+
+$("btnLoad").onclick=loadData;
+$("btnRefresh").onclick=loadData;
+$("btnClear").onclick=clearAll;
+</script>
+</body>
+</html>
