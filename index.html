@@ -107,7 +107,7 @@ tr:nth-child(even) td{background:#fcfdff}
       <div class="row">
         <div>
           <label class="small">URL Web App (Apps Script) /exec</label>
-          <input id="url" value="https://script.google.com/macros/s/AKfycbxKUV0MV5XYZmBhDLImS96OwhR9aIjtZNmfFqaFGLh_n1JScDjmdNNRiUfspw25q59RFg/exec" readonly>
+          <input id="url" placeholder="https://script.google.com/macros/s/.../exec" />
         </div>
         <div>
           <label class="small">Desde</label>
@@ -138,6 +138,36 @@ tr:nth-child(even) td{background:#fcfdff}
         <div style="display:flex;align-items:end;gap:10px">
           <button id="btnLoad">Cargar registros</button>
           <button class="secondary" id="btnClear">Limpiar</button>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <div>
+          <label class="small">Equipo exacto</label>
+          <select id="equipoSel"><option value="">Todos</option></select>
+        </div>
+        <div>
+          <label class="small">Faena</label>
+          <select id="faenaSel"><option value="">Todas</option></select>
+        </div>
+        <div>
+          <label class="small">Estado operativo</label>
+          <select id="estadoSel">
+            <option value="">Todos</option>
+            <option value="OPERATIVO">OPERATIVO</option>
+            <option value="FUERA_SERVICIO">FUERA SERVICIO</option>
+            <option value="VACIO">VACÍO</option>
+          </select>
+        </div>
+        <div>
+          <label class="small">Fecha rápida</label>
+          <select id="datePreset">
+            <option value="">Personalizado</option>
+            <option value="today">Hoy</option>
+            <option value="7d">Últimos 7 días</option>
+            <option value="30d">Últimos 30 días</option>
+            <option value="month">Mes actual</option>
+          </select>
         </div>
       </div>
       <div class="footerNote">Lee desde Google Sheets vía Apps Script. No modifica datos.</div>
@@ -211,6 +241,7 @@ const KPI_COLORS={HEF:"#16a34a",BNF:"#0f766e",HR:"#64748b",DP:"#7c3aed",DNP:"#25
 const FAIL_KEYS=["HMF","FSO","DNP","DP"];
 const $=id=>document.getElementById(id);
 const URL_KEY = "XTREME_WEBAPP_URL";
+let ALL_RECORDS = [];
 
 function setStatus(t, kind=""){
   const el=$("status");
@@ -226,6 +257,79 @@ function ymd(d){ const p=n=>String(n).padStart(2,"0"); return `${d.getFullYear()
   const saved = (localStorage.getItem(URL_KEY)||"").trim();
   if(saved) $("url").value = saved;
 })();
+
+
+function setPresetRange(v){
+  const now = new Date();
+  const p=n=>String(n).padStart(2,"0");
+  const fmt = d => `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;
+  if(v==="today"){
+    $("from").value = fmt(now); $("to").value = fmt(now);
+  }else if(v==="7d"){
+    const d = new Date(now); d.setDate(d.getDate()-7);
+    $("from").value = fmt(d); $("to").value = fmt(now);
+  }else if(v==="30d"){
+    const d = new Date(now); d.setDate(d.getDate()-30);
+    $("from").value = fmt(d); $("to").value = fmt(now);
+  }else if(v==="month"){
+    const d = new Date(now.getFullYear(), now.getMonth(), 1);
+    $("from").value = fmt(d); $("to").value = fmt(now);
+  }
+}
+
+function normalizeEstado(v){
+  const s = String(v||"").trim().toUpperCase();
+  return s==="VACÍO" ? "VACIO" : s;
+}
+
+function equipoLabel(r){
+  return r.idEquipo ? `${r.idEquipo} (${r.equipoTipo||""})` : (r.equipoTipo||"");
+}
+
+function populateFilterOptions(records){
+  const equipos = [...new Set(records.map(equipoLabel).filter(Boolean))].sort();
+  const faenas = [...new Set(records.map(r=>String(r.faena||"").trim()).filter(Boolean))].sort();
+
+  const eqSel = $("equipoSel");
+  const faSel = $("faenaSel");
+  const currEq = eqSel.value;
+  const currFa = faSel.value;
+
+  eqSel.innerHTML = '<option value="">Todos</option>' + equipos.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("");
+  faSel.innerHTML = '<option value="">Todas</option>' + faenas.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("");
+
+  if(equipos.includes(currEq)) eqSel.value = currEq;
+  if(faenas.includes(currFa)) faSel.value = currFa;
+}
+
+function applyClientFilters(records){
+  const eq = $("equipoSel").value.trim();
+  const fa = $("faenaSel").value.trim();
+  const es = $("estadoSel").value.trim().toUpperCase();
+
+  return records.filter(r=>{
+    if(eq && equipoLabel(r) !== eq) return false;
+    if(fa && String(r.faena||"").trim() !== fa) return false;
+    if(es && normalizeEstado(r.estadoOper) !== es) return false;
+    return true;
+  });
+}
+
+function renderAll(records){
+  const totals = sumTotals(records);
+  $("tb").innerHTML = records.map(rowHtml).join("");
+  makeBars(totals);
+  makeKpiCards(records, totals);
+  drawFailChart(totals);
+  renderRanking(records);
+  renderEstado(records);
+  setStatus("OK ("+records.length+")","ok");
+}
+
+function refilterLocal(){
+  renderAll(applyClientFilters(ALL_RECORDS));
+}
+
 
 function escapeHtml(v){
   return String(v ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
@@ -419,20 +523,18 @@ async function loadData(){
   setStatus("Cargando…","warn");
   const res = await fetch(url + "?" + params.toString(), {method:"GET"});
   const out = await res.json();
-  const records = out.records || [];
-  const totals = sumTotals(records);
+  ALL_RECORDS = out.records || [];
 
-  $("tb").innerHTML = records.map(rowHtml).join("");
-  makeBars(totals);
-  makeKpiCards(records, totals);
-  drawFailChart(totals);
-  renderRanking(records);
-  renderEstado(records);
-
-  setStatus("OK ("+records.length+")","ok");
+  populateFilterOptions(ALL_RECORDS);
+  renderAll(applyClientFilters(ALL_RECORDS));
 }
 
 function clearAll(){
+  ALL_RECORDS = [];
+  $("equipoLike").value="";
+  $("equipoSel").innerHTML='<option value="">Todos</option>';
+  $("faenaSel").innerHTML='<option value="">Todas</option>';
+  $("estadoSel").value="";
   $("tb").innerHTML="";
   $("bars").innerHTML="";
   $("kpiCards").innerHTML="";
@@ -446,12 +548,10 @@ function clearAll(){
 $("btnLoad").onclick=loadData;
 $("btnRefresh").onclick=loadData;
 $("btnClear").onclick=clearAll;
-
-window.addEventListener("load",()=>{
- document.getElementById("url").value = 'https://script.google.com/macros/s/AKfycbxKUV0MV5XYZmBhDLImS96OwhR9aIjtZNmfFqaFGLh_n1JScDjmdNNRiUfspw25q59RFg/exec';
- loadData();
-});
-
+$("equipoSel").onchange=refilterLocal;
+$("faenaSel").onchange=refilterLocal;
+$("estadoSel").onchange=refilterLocal;
+$("datePreset").onchange=(e)=>setPresetRange(e.target.value);
 </script>
 </body>
 </html>
