@@ -140,6 +140,15 @@ tr:nth-child(even) td{background:#fcfdff}
           <button class="secondary" id="btnClear">Limpiar</button>
         </div>
       </div>
+
+      <div class="row" style="margin-top:10px">
+        <div>
+          <label class="small">Equipo exacto</label>
+          <select id="equipoSel">
+            <option value="">Todos</option>
+          </select>
+        </div>
+      </div>
       <div class="footerNote">Lee desde Google Sheets vía Apps Script. No modifica datos.</div>
     </div>
   </div>
@@ -211,6 +220,7 @@ const KPI_COLORS={HEF:"#16a34a",BNF:"#0f766e",HR:"#64748b",DP:"#7c3aed",DNP:"#25
 const FAIL_KEYS=["HMF","FSO","DNP","DP"];
 const $=id=>document.getElementById(id);
 const URL_KEY = "XTREME_WEBAPP_URL";
+let ALL_RECORDS = [];
 
 function setStatus(t, kind=""){
   const el=$("status");
@@ -226,6 +236,40 @@ function ymd(d){ const p=n=>String(n).padStart(2,"0"); return `${d.getFullYear()
   $("url").value = "https://script.google.com/macros/s/AKfycbxKUV0MV5XYZmBhDLImS96OwhR9aIjtZNmfFqaFGLh_n1JScDjmdNNRiUfspw25q59RFg/exec";
   try{ localStorage.setItem(URL_KEY, "https://script.google.com/macros/s/AKfycbxKUV0MV5XYZmBhDLImS96OwhR9aIjtZNmfFqaFGLh_n1JScDjmdNNRiUfspw25q59RFg/exec"); }catch(e){}
 })();
+
+
+function equipoLabel(r){
+  return r.idEquipo ? `${r.idEquipo} (${r.equipoTipo||""})` : (r.equipoTipo||"");
+}
+
+function populateEquipoFilter(records){
+  const sel = $("equipoSel");
+  if(!sel) return;
+  const equipos = [...new Set(records.map(equipoLabel).filter(Boolean))].sort();
+  const current = sel.value;
+  sel.innerHTML = '<option value="">Todos</option>' + equipos.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("");
+  if(equipos.includes(current)) sel.value = current;
+}
+
+function applyEquipoFilter(records){
+  const sel = $("equipoSel");
+  if(!sel) return records;
+  const eq = sel.value.trim();
+  if(!eq) return records;
+  return records.filter(r => equipoLabel(r) === eq);
+}
+
+function refilterLocal(){
+  const filtered = applyEquipoFilter(ALL_RECORDS);
+  const totals = sumTotals(filtered);
+  $("tb").innerHTML = filtered.map(rowHtml).join("");
+  makeBars(totals);
+  makeKpiCards(filtered, totals);
+  drawFailChart(totals);
+  renderRanking(filtered);
+  renderEstado(filtered);
+  setStatus("OK ("+filtered.length+")","ok");
+}
 
 function escapeHtml(v){
   return String(v ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
@@ -419,17 +463,9 @@ async function loadData(){
   setStatus("Cargando…","warn");
   const res = await fetch(url + "?" + params.toString(), {method:"GET"});
   const out = await res.json();
-  const records = out.records || [];
-  const totals = sumTotals(records);
-
-  $("tb").innerHTML = records.map(rowHtml).join("");
-  makeBars(totals);
-  makeKpiCards(records, totals);
-  drawFailChart(totals);
-  renderRanking(records);
-  renderEstado(records);
-
-  setStatus("OK ("+records.length+")","ok");
+  ALL_RECORDS = out.records || [];
+  populateEquipoFilter(ALL_RECORDS);
+  refilterLocal();
 }
 
 function clearAll(){
@@ -446,6 +482,7 @@ function clearAll(){
 $("btnLoad").onclick=loadData;
 $("btnRefresh").onclick=loadData;
 $("btnClear").onclick=clearAll;
+if($("equipoSel")) $("equipoSel").onchange=refilterLocal;
 
 window.addEventListener("load", ()=>{
   try{
